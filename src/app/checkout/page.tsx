@@ -18,6 +18,8 @@ import {
 } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useState } from 'react';
 
 const checkoutSchema = z.object({
   name: z.string().min(2, 'Name is required'),
@@ -25,15 +27,52 @@ const checkoutSchema = z.object({
   address: z.string().min(5, 'Address is required'),
   city: z.string().min(2, 'City is required'),
   phone: z.string().min(10, 'Phone number is required'),
-  card_number: z.string().length(16, 'Card number must be 16 digits'),
-  expiry_date: z.string().regex(/^(0[1-9]|1[0-2])\/\d{2}$/, 'Expiry date must be in MM/YY format'),
-  cvv: z.string().length(3, 'CVV must be 3 digits'),
+  paymentMethod: z.enum(['card', 'mpesa']),
+  mpesaPhone: z.string().optional(),
+  cardNumber: z.string().optional(),
+  expiryDate: z.string().optional(),
+  cvv: z.string().optional(),
+}).refine(data => {
+  if (data.paymentMethod === 'mpesa') {
+    return !!data.mpesaPhone && data.mpesaPhone.length >= 10;
+  }
+  return true;
+}, {
+  message: 'M-Pesa phone number is required',
+  path: ['mpesaPhone'],
+}).refine(data => {
+    if (data.paymentMethod === 'card') {
+        return !!data.cardNumber && data.cardNumber.length === 16;
+    }
+    return true;
+}, {
+    message: 'Card number must be 16 digits',
+    path: ['cardNumber'],
+}).refine(data => {
+    if (data.paymentMethod === 'card') {
+        return !!data.expiryDate && /^(0[1-9]|1[0-2])\/\d{2}$/.test(data.expiryDate);
+    }
+    return true;
+}, {
+    message: 'Expiry date must be in MM/YY format',
+    path: ['expiryDate'],
+}).refine(data => {
+    if (data.paymentMethod === 'card') {
+        return !!data.cvv && data.cvv.length === 3;
+    }
+    return true;
+}, {
+    message: 'CVV must be 3 digits',
+    path: ['cvv'],
 });
+
 
 export default function CheckoutPage() {
   const { cartItems, totalPrice, clearCart } = useCart();
   const { toast } = useToast();
   const router = useRouter();
+  const [paymentMethod, setPaymentMethod] = useState('mpesa');
+
 
   const form = useForm<z.infer<typeof checkoutSchema>>({
     resolver: zodResolver(checkoutSchema),
@@ -43,8 +82,10 @@ export default function CheckoutPage() {
       address: '',
       city: '',
       phone: '',
-      card_number: '',
-      expiry_date: '',
+      paymentMethod: 'mpesa',
+      mpesaPhone: '',
+      cardNumber: '',
+      expiryDate: '',
       cvv: '',
     },
   });
@@ -152,49 +193,108 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <h3 className="text-xl font-headline pt-4">Payment Details</h3>
+                  
                   <FormField
                     control={form.control}
-                    name="card_number"
+                    name="paymentMethod"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Card Number</FormLabel>
+                      <FormItem className="space-y-3">
+                        <FormLabel>Payment Method</FormLabel>
                         <FormControl>
-                          <Input placeholder="•••• •••• •••• ••••" {...field} />
+                          <RadioGroup
+                            onValueChange={(value) => {
+                                field.onChange(value);
+                                setPaymentMethod(value);
+                            }}
+                            defaultValue={field.value}
+                            className="flex space-x-4"
+                          >
+                            <FormItem className="flex items-center space-x-2 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="mpesa" />
+                              </FormControl>
+                              <FormLabel className="font-normal">
+                                M-Pesa
+                              </FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-2 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="card" />
+                              </FormControl>
+                              <FormLabel className="font-normal">
+                                Card
+                              </FormLabel>
+                            </FormItem>
+                          </RadioGroup>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                   <div className="grid grid-cols-2 gap-4">
+
+                  {paymentMethod === 'mpesa' && (
                      <FormField
-                       control={form.control}
-                       name="expiry_date"
-                       render={({ field }) => (
-                         <FormItem>
-                           <FormLabel>Expiry Date</FormLabel>
-                           <FormControl>
-                             <Input placeholder="MM/YY" {...field} />
-                           </FormControl>
-                           <FormMessage />
-                         </FormItem>
-                       )}
-                     />
-                     <FormField
-                       control={form.control}
-                       name="cvv"
-                       render={({ field }) => (
-                         <FormItem>
-                           <FormLabel>CVV</FormLabel>
-                           <FormControl>
-                             <Input placeholder="123" {...field} />
-                           </FormControl>
-                           <FormMessage />
-                         </FormItem>
-                       )}
-                     />
-                   </div>
+                        control={form.control}
+                        name="mpesaPhone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>M-Pesa Phone Number</FormLabel>
+                            <FormControl>
+                              <Input placeholder="0712 345 678" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                  )}
+
+                  {paymentMethod === 'card' && (
+                    <>
+                      <FormField
+                        control={form.control}
+                        name="cardNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Card Number</FormLabel>
+                            <FormControl>
+                              <Input placeholder="•••• •••• •••• ••••" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                       <div className="grid grid-cols-2 gap-4">
+                         <FormField
+                           control={form.control}
+                           name="expiryDate"
+                           render={({ field }) => (
+                             <FormItem>
+                               <FormLabel>Expiry Date</FormLabel>
+                               <FormControl>
+                                 <Input placeholder="MM/YY" {...field} />
+                               </FormControl>
+                               <FormMessage />
+                             </FormItem>
+                           )}
+                         />
+                         <FormField
+                           control={form.control}
+                           name="cvv"
+                           render={({ field }) => (
+                             <FormItem>
+                               <FormLabel>CVV</FormLabel>
+                               <FormControl>
+                                 <Input placeholder="123" {...field} />
+                               </FormControl>
+                               <FormMessage />
+                             </FormItem>
+                           )}
+                         />
+                       </div>
+                    </>
+                  )}
                   <Button type="submit" size="lg" className="w-full mt-6">
-                    Place Order (KSh {grandTotal.toLocaleString()})
+                    {paymentMethod === 'mpesa' ? 'Pay with M-Pesa' : 'Place Order'} (KSh {grandTotal.toLocaleString()})
                   </Button>
                 </form>
               </Form>

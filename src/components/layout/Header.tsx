@@ -101,6 +101,13 @@ export function Header() {
                       <p className="text-xs text-muted-foreground">{user?.email}</p>
                     </div>
                     <Link
+                      href="/admin"
+                      className="flex items-center gap-2 rounded-md p-2 text-lg font-medium hover:bg-muted"
+                    >
+                      <User className="h-5 w-5" />
+                      Admin Dashboard
+                    </Link>
+                    <Link
                       href="/account"
                       className="flex items-center gap-2 rounded-md p-2 text-lg font-medium hover:bg-muted"
                     >
@@ -173,6 +180,9 @@ export function Header() {
                     </div>
                   </div>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin">Admin Dashboard</Link>
+                  </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href="/account">Account</Link>
                   </DropdownMenuItem>

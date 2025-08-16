@@ -14,6 +14,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useCart } from '@/hooks/use-cart';
+import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 
 interface ProductCardProps {
@@ -22,9 +23,19 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCart();
+  const { isAuthenticated } = useAuth();
   const { toast } = useToast();
 
   const handleAddToCart = () => {
+    if (!isAuthenticated) {
+      toast({
+        title: 'Authentication required',
+        description: 'Please sign in or create an account to add items to your cart.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     addItem(product);
     toast({
       title: 'Added to cart',

@@ -8,13 +8,15 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Trash2, ShoppingBag } from 'lucide-react';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 
 export default function CartPage() {
   const { cartItems, removeItem, updateQuantity, totalPrice, totalItems } = useCart();
   const shippingFee = 500;
   const grandTotal = totalPrice + shippingFee;
 
-  return (
+  const cartContent = (
+
     <div className="container mx-auto px-4 md:px-6 py-12">
       <h1 className="text-3xl md:text-4xl font-headline font-bold mb-8">Your Shopping Cart</h1>
       {cartItems.length === 0 ? (
@@ -105,5 +107,33 @@ export default function CartPage() {
         </div>
       )}
     </div>
+  );
+
+  return (
+    <ProtectedRoute
+      fallback={
+        <div className="container mx-auto px-4 md:px-6 py-12">
+          <Card className="text-center py-16 max-w-md mx-auto">
+            <CardContent className="flex flex-col items-center">
+              <ShoppingBag className="w-16 h-16 text-muted-foreground mb-4" />
+              <h2 className="text-2xl font-semibold mb-2">Authentication Required</h2>
+              <p className="text-muted-foreground mb-6">
+                Please sign in or create an account to view your shopping cart.
+              </p>
+              <div className="flex gap-4">
+                <Button asChild variant="outline">
+                  <Link href="/login">Sign In</Link>
+                </Button>
+                <Button asChild>
+                  <Link href="/signup">Create Account</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      }
+    >
+      {cartContent}
+    </ProtectedRoute>
   );
 }

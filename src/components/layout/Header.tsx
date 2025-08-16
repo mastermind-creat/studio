@@ -12,6 +12,7 @@ import {
 
 import { cn } from '@/lib/utils';
 import { useCart } from '@/hooks/use-cart';
+import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Logo } from '@/components/icons';
@@ -20,6 +21,13 @@ import {
   SheetContent,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const navLinks = [
   { href: '/shop', label: 'Shop', icon: Store },
@@ -29,6 +37,7 @@ const navLinks = [
 export function Header() {
   const pathname = usePathname();
   const { totalItems } = useCart();
+  const { user, isAuthenticated, logout } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -84,6 +93,47 @@ export function Header() {
                   {link.label}
                 </Link>
               ))}
+              <div className="border-t pt-4 mt-4">
+                {isAuthenticated ? (
+                  <div className="space-y-2">
+                    <div className="px-2 py-1">
+                      <p className="text-sm font-medium">{user?.name}</p>
+                      <p className="text-xs text-muted-foreground">{user?.email}</p>
+                    </div>
+                    <Link
+                      href="/account"
+                      className="flex items-center gap-2 rounded-md p-2 text-lg font-medium hover:bg-muted"
+                    >
+                      <User className="h-5 w-5" />
+                      Account
+                    </Link>
+                    <button
+                      onClick={logout}
+                      className="flex w-full items-center gap-2 rounded-md p-2 text-lg font-medium hover:bg-muted text-left"
+                    >
+                      <User className="h-5 w-5" />
+                      Log out
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Link
+                      href="/login"
+                      className="flex items-center gap-2 rounded-md p-2 text-lg font-medium hover:bg-muted"
+                    >
+                      <User className="h-5 w-5" />
+                      Sign In
+                    </Link>
+                    <Link
+                      href="/signup"
+                      className="flex items-center gap-2 rounded-md p-2 text-lg font-medium hover:bg-muted"
+                    >
+                      <User className="h-5 w-5" />
+                      Sign Up
+                    </Link>
+                  </div>
+                )}
+              </div>
             </nav>
           </SheetContent>
         </Sheet>
@@ -104,12 +154,43 @@ export function Header() {
                 <span className="sr-only">Shopping Cart</span>
               </Link>
             </Button>
-            <Button variant="ghost" size="icon" asChild>
-              <Link href="/account">
-                <User className="h-5 w-5" />
-                <span className="sr-only">User Account</span>
-              </Link>
-            </Button>
+            
+            {isAuthenticated ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <User className="h-5 w-5" />
+                    <span className="sr-only">User Account</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="flex items-center justify-start gap-2 p-2">
+                    <div className="flex flex-col space-y-1 leading-none">
+                      <p className="font-medium">{user?.name}</p>
+                      <p className="w-[200px] truncate text-sm text-muted-foreground">
+                        {user?.email}
+                      </p>
+                    </div>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/account">Account</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={logout}>
+                    Log out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" asChild>
+                  <Link href="/login">Sign In</Link>
+                </Button>
+                <Button asChild>
+                  <Link href="/signup">Sign Up</Link>
+                </Button>
+              </div>
+            )}
           </nav>
         </div>
       </div>
